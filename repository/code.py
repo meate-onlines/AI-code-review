@@ -24,7 +24,7 @@ def get_mrs_created_today():
     # 遍历所有项目
     for project in gl.projects.list(all=True):
         # 获取项目中的所有合并请求
-        mrs = project.mergerequests.list(state='opened', created_after=start_date, created_before=end_date)
+        mrs = project.mergerequests.list(state='opened', created_after=start_date, created_before=end_date, all=True)
         all_mrs.extend(mrs)
     return all_mrs
 
@@ -45,6 +45,8 @@ def parse_diffs(all_mrs, callback=None):
             matches = pattern.findall(diff)
             diff_list = list(filter(None, diff.split('@@ -')))
             for index, item_diff in enumerate(diff_list):
+                if not any(char.isalpha() for char in item_diff):
+                    continue
                 body = callback(item_diff)
                 if not body:
                     continue
