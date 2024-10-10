@@ -1,0 +1,14 @@
+# GitLab相关配置
+gitlab:
+    url: xxxxxxx # GitLab服务器地址
+    user: xxxxxxx # GitLab用户名，用于登录
+    token: xxxxxxx # 用户访问令牌，用于授权
+
+# aliyun AI助手相关配置
+ai:
+    base_url: xxxxxxx # AI服务的基础URL
+    api_key: xxxxxxx # AI服务的API密钥，用于身份验证
+    model: xxxxxxx # 使用的AI模型名称
+    role_desc: you are a code reviewer # AI模型的角色描述，使其明确自己的定位是代码审核者
+    prompt: 你是一个代码审核者，请 review 代码，找出代码中的问题，给出关键问题的描述，字数在 300 字以内，
+           如果是配置类代码片段，请返回空字符串。 # 提供给AI模型的提示信息，引导其进行代码审核任务
