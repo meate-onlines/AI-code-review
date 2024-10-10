@@ -1,0 +1,4 @@
+openai~=1.51.2
+python-gitlab~=4.13.0
+PyYAML~=6.0.2
+python~=3.9
