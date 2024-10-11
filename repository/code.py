@@ -51,7 +51,7 @@ def parse_diffs(all_mrs, callback=None) -> None:
                 body = callback(item_diff)
                 if not body:
                     continue
-                print(item_diff)
+                print(clear_diff_line)
                 print(file_path)
                 line = matches[index]
                 start_line = int(line[0])
