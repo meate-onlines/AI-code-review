@@ -80,11 +80,9 @@ def clear_diff(diff) -> str:  # 清除diff中的无用信息
     diff_list = diff.split('\n')
     diff_list = [line for line in diff_list if not (line.strip().startswith('-') or line.strip() == '')]
     if len(diff_list) > 0:
-        return ""
-    diff = '\n'.join(diff_list)
-    if contains_letters(diff):
-        return diff
-
+        diff = '\n'.join(diff_list)
+        if contains_letters(diff):
+            return diff
     return ""
 
 
