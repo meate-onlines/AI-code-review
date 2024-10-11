@@ -9,12 +9,12 @@ client = OpenAI(
 )
 
 
-def review_code(code_str):
+def review_code(code_string):
     completion = client.chat.completions.create(
         model=ai_config['model'],
         messages=[
             {'role': 'system', 'content': ai_config['role_desc']},
-            {'role': 'user', 'content': ai_config['prompt'] + "\n" + code_str}])
+            {'role': 'user', 'content': ai_config['prompt'] + "\n" + code_string}])
 
     return completion.choices[0].message.content
 
