@@ -19,7 +19,7 @@ end_date = today_end.isoformat()
 
 
 # 查询当天创建的合并请求
-def get_mrs_created_today():
+def get_mrs_created_today() -> list:
     all_mrs = []
     # 遍历所有项目
     for project in gl.projects.list(all=True):
@@ -29,7 +29,7 @@ def get_mrs_created_today():
     return all_mrs
 
 
-def parse_diffs(all_mrs, callback=None):
+def parse_diffs(all_mrs, callback=None) -> None:
     for item in all_mrs:
         project = gl.projects.get(item.project_id)
         mr = project.mergerequests.get(item.iid)
@@ -45,7 +45,8 @@ def parse_diffs(all_mrs, callback=None):
             matches = pattern.findall(diff)
             diff_list = list(filter(None, diff.split('@@ -')))
             for index, item_diff in enumerate(diff_list):
-                if not any(char.isalpha() for char in item_diff):
+                clear_diff_line = clear_diff(item_diff)
+                if not clear_diff_line:
                     continue
                 body = callback(item_diff)
                 if not body:
@@ -73,7 +74,29 @@ def parse_diffs(all_mrs, callback=None):
                     'resolve': False
                 })
                 discussion.save()
-            break
+
+
+def clear_diff(diff) -> str:  # 清除diff中的无用信息
+    diff_list = diff.split('\n')
+    diff_list = [line for line in diff_list if not (line.strip().startswith('-') or line.strip() == '')]
+    if len(diff_list) > 0:
+        return ""
+    diff = '\n'.join(diff_list)
+    if contains_letters(diff):
+        return diff
+
+    return ""
+
+
+def contains_letters(input_string) -> bool:
+    # 正则表达式模式，用于匹配任何字母字符
+    pattern = r'[a-zA-Z]'
+
+    # 搜索字符串中的字母字符
+    if re.search(pattern, input_string):
+        return True
+
+    return False
 
 
 # 打印当天创建的合并请求
