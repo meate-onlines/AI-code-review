@@ -1,4 +1,3 @@
-import logging
 import re
 from datetime import datetime, timedelta
 from config_loader import config
@@ -39,6 +38,7 @@ def parse_diffs(all_mrs, callback=None) -> None:
         mr = project.mergerequests.get(item.iid)
         # 获取合并请求的提交记录
         commits = mr.commits()
+        print(commits)
         for commit in commits:
             commit_date = datetime.strptime(commit.committed_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
             if commit_date == today:
