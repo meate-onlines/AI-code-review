@@ -123,3 +123,4 @@ def contains_letters(input_string) -> bool:
 if __name__ == "__main__":
     mrs_today = get_mrs_created_today()
     parse_diffs(mrs_today)
+    
