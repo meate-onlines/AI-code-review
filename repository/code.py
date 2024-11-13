@@ -73,7 +73,7 @@ def parse_diffs(all_mrs, callback=None) -> None:
                                 f"### **文件：{file_path} 第{start_line}到{end_line}行**\n"
                                 f"\nAI review:{body}"
                             )
-                            
+                            print("----------------"+body+"--------------------")
                             discussion = mr.notes.create({
                                 'body': body,
                                 'position': {
@@ -100,7 +100,7 @@ def parse_diffs(all_mrs, callback=None) -> None:
 def clear_diff(diff) -> str:  # 清除diff中的无用信息
     diff_list = diff.split('\n')
     diff_list = [line for line in diff_list
-                 if not (line.strip().startswith('-') or line.strip() == '' or line.find('import') >= 0)]
+                 if not (line.strip().startswith('-') or line.strip() == '')]
     if len(diff_list) > 0:
         diff = '\n'.join(diff_list)
         if contains_letters(diff):
