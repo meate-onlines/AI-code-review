@@ -55,11 +55,11 @@ def parse_diffs(all_mrs, callback=None) -> None:
                     for index, item_diff in enumerate(diff_list):
                         try:
                             clear_diff_line = clear_diff(item_diff)
-                            if clear_diff_line is None:
+                            if not clear_diff_line:
                                 continue
                             
                             body = callback(item_diff)
-                            if body is None:
+                            if not body:
                                 continue
                             
                             line = matches[index]
