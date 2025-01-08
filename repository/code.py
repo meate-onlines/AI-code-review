@@ -32,70 +32,36 @@ def get_mrs_created_today() -> list:
 
 
 def parse_diffs(all_mrs, callback=None) -> None:
-    print(all_mrs)
     for item in all_mrs:
         project = gl.projects.get(item.project_id)
         mr = project.mergerequests.get(item.iid)
         # 获取合并请求的提交记录
         commits = mr.commits()
-        print(commits)
         for commit in commits:
             commit_date = datetime.strptime(commit.committed_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
             if commit_date == today:
                 diffs = commit.diff(get_all=True, deleted_file=False, diff=True)
-                print(f"today diffs: {diffs}")
                 for file_change in diffs:
                     file_path = file_change['new_path'] if 'new_path' in file_change else file_change['old_path']
-                    if file_path.find('pom.xml') >= 0:
+                    if file_path.find('pom.xml') >= 0 :
                         continue
-                    diff = file_change['diff']
-                    pattern = re.compile(r'@@ -\d+,\d+ \+(\d+),(\d+) @@')
-                    matches = pattern.findall(diff)
-                    diff_list = list(filter(None, diff.split('@@ -')))
-                    for index, item_diff in enumerate(diff_list):
-                        try:
-                            clear_diff_line = clear_diff(item_diff)
-                            if not clear_diff_line:
-                                continue
-                            
-                            body = callback(item_diff)
-                            if not body:
-                                continue
-                            
-                            line = matches[index]
-                            if len(line) == 0:
-                                continue
-                            
-                            start_line = int(line[0])
-                            end_line = int(line[1]) + start_line - 1
-                            
-                            body = (
-                                f"### **文件：{file_path} 第{start_line}到{end_line}行**\n"
-                                f"\nAI review:{body}"
-                            )
-                            print("----------------"+body+"--------------------")
-                            discussion = mr.notes.create({
-                                'body': body,
-                                'position': {
-                                    'base_sha': mr.diff_refs.get('base_sha', ""),
-                                    'head_sha': mr.diff_refs.get('head_sha', ''),
-                                    'start_sha': mr.diff_refs.get('start_sha', ""),
-                                    'position_type': 'text',
-                                    'new_line': True,
-                                    "file_path": file_path,
-                                    'line': start_line,
-                                    'line_type': 'new'
-                                },
-                                'resolve': False
-                            })
-                            discussion.save()
-                        
-                        except Exception as e:
-                            # 更具体的异常捕获可以在这里添加
-                            print(f"An error occurred: {e}")
-                            # 可以考虑记录详细的错误日志
-                            # logging.error(f"An error occurred: {e}", exc_info=True)
+                    # Skip image, video and other media files
+                    if re.search(r'\.(jpg|jpeg|png|gif|bmp|svg|mp4|avi|mov|wmv|flv|mp3|wav|ogg|pdf|ico)$', file_path, re.IGNORECASE):
+                        print(f"Skipping media file: {file_path}")
+                        continue
+                    print(f"file_path: {file_path}")
+                    # 获取文件内容
+                    try:
+                        file_content = project.files.get(file_path, ref=mr.source_branch).decode().decode('utf-8')
+                        body = callback(file_content)
+                        if body['success'] == True:
+                            create_merge_request_note(mr, body['data'], file_path, 1, False)
+                        else:
+                            process_diff_section(file_path, mr, file_change['diff'], callback)
 
+                    except gitlab.exceptions.GitlabGetError:
+                        print(f"Unable to read file: {file_path}")
+                        continue
 
 def clear_diff(diff) -> str:  # 清除diff中的无用信息
     diff_list = diff.split('\n')
@@ -118,6 +84,83 @@ def contains_letters(input_string) -> bool:
 
     return False
 
+def create_merge_request_note(mr, body: str, file_path: str, start_line: int, end_line: any):
+    """
+    在合并请求中创建一个新的评论
+    
+    Args:
+        mr: 合并请求对象
+        body: 评论内容
+        file_path: 文件路径
+        start_line: 评论所在行号
+    
+    Returns:
+        discussion: 创建的评论对象
+    """
+    if end_line == False:
+        end_line = "全部代码"
+    else:
+        end_line = f"第{start_line}到{end_line}行"  
+    comment_str = (
+                f"### **文件：{file_path} {end_line}**\n"
+                f"\nAI review:{body}"
+    )
+    print("----------------"+comment_str+"--------------------")
+    discussion = mr.notes.create({
+        'body': comment_str,
+        'position': {
+            'base_sha': mr.diff_refs.get('base_sha', ""),
+            'head_sha': mr.diff_refs.get('head_sha', ''),
+            'start_sha': mr.diff_refs.get('start_sha', ""),
+            'position_type': 'text',
+            'new_line': True,
+            "file_path": file_path,
+            'line': start_line,
+            'line_type': 'new'
+        },
+        'resolve': False
+    })
+    
+    return discussion
+
+# ... existing code ...
+
+def process_diff_section(file_path: str, mr, diff: str, callback) -> None:
+    """
+    处理单个文件的diff部分创建相应的合并请求评论
+    
+    Args:
+        file_path: 文件路径
+        mr: 合并请求对象
+        diff: diff内容
+        callback: 回调函数用于处理diff内容
+    """
+    pattern = re.compile(r'@@ -\d+,\d+ \+(\d+),(\d+) @@')
+    matches = pattern.findall(diff)
+    diff_list = list(filter(None, diff.split('@@ -')))
+    
+    for index, item_diff in enumerate(diff_list):
+        try:
+            clear_diff_line = clear_diff(item_diff)
+            if not clear_diff_line:
+                continue
+            
+            body = callback(item_diff)
+            if body['success'] == False:
+                continue
+            
+            line = matches[index]
+            if len(line) == 0:
+                continue
+            
+            start_line = int(line[0])
+            end_line = int(line[1]) + start_line - 1
+            
+            discussion = create_merge_request_note(mr, body['data'], file_path, start_line, end_line)
+            discussion.save()
+            
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
 # 打印当天创建的合并请求
 if __name__ == "__main__":

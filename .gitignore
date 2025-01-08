@@ -1,3 +1,5 @@
 .idea
 /config.yml
 /repository/*_test.*
+*_test.*
+*.pyc

@@ -9,14 +9,34 @@ client = OpenAI(
 )
 
 
-def review_code(code_string):
+def review_code(code_string)->dict:
     completion = client.chat.completions.create(
         model=ai_config['model'],
         messages=[
             {'role': 'system', 'content': ai_config['role_desc']},
             {'role': 'user', 'content': ai_config['prompt'] + "\n" + code_string}])
+    print(completion)
+    if not completion or not completion.choices or len(completion.choices) == 0:
+        return {
+            'success': False,
+            'message': 'No response from AI service',
+            'data': None
+        }
 
-    return completion.choices[0].message.content
+    review_content = completion.choices[0].message.content
+    if not review_content:
+        return {
+            'success': False, 
+            'message': 'Empty review content',
+            'data': None
+        }
+
+    return {
+        'success': True,
+        'message': 'Review completed successfully',
+        'data': review_content
+    }
+
 
 
 if __name__ == "__main__":
