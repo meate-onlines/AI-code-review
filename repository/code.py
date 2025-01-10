@@ -45,6 +45,15 @@ def parse_diffs(all_mrs, callback=None) -> None:
                     file_path = file_change['new_path'] if 'new_path' in file_change else file_change['old_path']
                     if file_path.find('pom.xml') >= 0 :
                         continue
+                    # Skip already processed files
+                    if hasattr(mr, 'processed_files') and file_path in mr.processed_files:
+                        print(f"Skipping already processed file: {file_path}")
+                        continue
+                    
+                    # Initialize processed_files set if not exists
+                    if not hasattr(mr, 'processed_files'):
+                        mr.processed_files = set()
+                    mr.processed_files.add(file_path)
                     # Skip image, video and other media files
                     if re.search(r'\.(jpg|jpeg|png|gif|bmp|svg|mp4|avi|mov|wmv|flv|mp3|wav|ogg|pdf|ico)$', file_path, re.IGNORECASE):
                         print(f"Skipping media file: {file_path}")

@@ -7,6 +7,7 @@
 This is an AI code review tool designed to be used in conjunction with GitLab.
 
 It leverages AI models to analyze code and provide feedback and modification suggestions, aiding developers in improving code quality and efficiency.
+![alt text](image.png)
 
 ## Features
 
