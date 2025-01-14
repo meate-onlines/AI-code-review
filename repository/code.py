@@ -37,6 +37,7 @@ def parse_diffs(all_mrs, callback=None) -> None:
         mr = project.mergerequests.get(item.iid)
         # 获取合并请求的提交记录
         commits = mr.commits()
+        processed_files = set()
         for commit in commits:
             commit_date = datetime.strptime(commit.committed_date, "%Y-%m-%dT%H:%M:%S.%fZ").date()
             if commit_date == today:
@@ -46,14 +47,11 @@ def parse_diffs(all_mrs, callback=None) -> None:
                     if file_path.find('pom.xml') >= 0 :
                         continue
                     # Skip already processed files
-                    if hasattr(mr, 'processed_files') and file_path in mr.processed_files:
+                    if file_path in processed_files:
                         print(f"Skipping already processed file: {file_path}")
                         continue
-                    
                     # Initialize processed_files set if not exists
-                    if not hasattr(mr, 'processed_files'):
-                        mr.processed_files = set()
-                    mr.processed_files.add(file_path)
+                    processed_files.add(file_path)
                     # Skip image, video and other media files
                     if re.search(r'\.(jpg|jpeg|png|gif|bmp|svg|mp4|avi|mov|wmv|flv|mp3|wav|ogg|pdf|ico)$', file_path, re.IGNORECASE):
                         print(f"Skipping media file: {file_path}")
