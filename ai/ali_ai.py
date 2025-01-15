@@ -10,12 +10,20 @@ client = OpenAI(
 
 
 def review_code(code_string)->dict:
-    completion = client.chat.completions.create(
-        model=ai_config['model'],
-        messages=[
-            {'role': 'system', 'content': ai_config['role_desc']},
-            {'role': 'user', 'content': ai_config['prompt'] + "\n" + code_string}])
-    print(completion)
+    try:
+        completion = client.chat.completions.create(
+            model=ai_config['model'],
+            messages=[
+                {'role': 'system', 'content': ai_config['role_desc']},
+                {'role': 'user', 'content': ai_config['prompt'] + "\n" + code_string}])
+        print(completion)
+    except Exception as e:
+        print(f"Error: {e}")
+        return {
+            'success': False,
+            'message': 'request ai error',
+            'data': None
+        }
     if not completion or not completion.choices or len(completion.choices) == 0:
         return {
             'success': False,

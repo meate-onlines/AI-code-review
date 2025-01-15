@@ -44,7 +44,8 @@ def parse_diffs(all_mrs, callback=None) -> None:
                 diffs = commit.diff(get_all=True, deleted_file=False, diff=True)
                 for file_change in diffs:
                     file_path = file_change['new_path'] if 'new_path' in file_change else file_change['old_path']
-                    if file_path.find('pom.xml') >= 0 :
+                    if not re.search(r'\.(java|xml)$', file_path, re.IGNORECASE):
+                        print(f"Skipping media file: {file_path}")
                         continue
                     # Skip already processed files
                     if file_path in processed_files:
@@ -52,18 +53,17 @@ def parse_diffs(all_mrs, callback=None) -> None:
                         continue
                     # Initialize processed_files set if not exists
                     processed_files.add(file_path)
-                    # Skip image, video and other media files
-                    if re.search(r'\.(jpg|jpeg|png|gif|bmp|svg|mp4|avi|mov|wmv|flv|mp3|wav|ogg|pdf|ico)$', file_path, re.IGNORECASE):
-                        print(f"Skipping media file: {file_path}")
-                        continue
+                    
                     print(f"file_path: {file_path}")
                     # 获取文件内容
                     try:
                         file_content = project.files.get(file_path, ref=mr.source_branch).decode().decode('utf-8')
+                        if not file_content:
+                            continue
                         body = callback(file_content)
                         if body['success'] == True:
                             create_merge_request_note(mr, body['data'], file_path, 1, False)
-                        else:
+                        elif not body['message'] == 'request ai error':
                             process_diff_section(file_path, mr, file_change['diff'], callback)
 
                     except gitlab.exceptions.GitlabGetError:
