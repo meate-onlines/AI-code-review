@@ -1,0 +1,101 @@
+skill: java-exception-handling
+
+cases:
+  - name: 空 catch 必须被检出为 critical
+    file_path: src/main/java/com/foo/FileLoader.java
+    code: |
+      package com.foo;
+
+      import java.io.InputStream;
+      import java.nio.file.Files;
+      import java.nio.file.Path;
+
+      public class FileLoader {
+          public byte[] load(String pathStr) {
+              try {
+                  InputStream in = Files.newInputStream(Path.of(pathStr));
+                  return in.readAllBytes();
+              } catch (Exception e) {
+              }
+              return new byte[0];
+          }
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      min_severity: critical
+      issue_keywords: ["catch", "吞", "异常", "堆栈"]
+
+  - name: catch Throwable 应被检出
+    file_path: src/main/java/com/foo/JobRunner.java
+    code: |
+      package com.foo;
+
+      public class JobRunner {
+          public void run(Runnable r) {
+              try {
+                  r.run();
+              } catch (Throwable t) {
+                  System.out.println("err");
+              }
+          }
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["Throwable", "兜底", "宽"]
+
+  - name: 自定义异常未保留 cause 应被检出
+    file_path: src/main/java/com/foo/Parser.java
+    code: |
+      package com.foo;
+
+      public class Parser {
+          public int parse(String s) {
+              try {
+                  return Integer.parseInt(s);
+              } catch (NumberFormatException e) {
+                  throw new RuntimeException("parse failed");
+              }
+          }
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["cause", "原始", "堆栈", "异常控制"]
+
+  - name: 标准用法不应被误报
+    file_path: src/main/java/com/foo/CleanLoader.java
+    code: |
+      package com.foo;
+
+      import java.io.IOException;
+      import java.io.InputStream;
+      import java.nio.file.Files;
+      import java.nio.file.Path;
+      import org.slf4j.Logger;
+      import org.slf4j.LoggerFactory;
+
+      public class CleanLoader {
+          private static final Logger log = LoggerFactory.getLogger(CleanLoader.class);
+
+          public byte[] load(String pathStr) {
+              try (InputStream in = Files.newInputStream(Path.of(pathStr))) {
+                  return in.readAllBytes();
+              } catch (IOException e) {
+                  log.error("load file failed, path={}", pathStr, e);
+                  throw new BizException("load_failed", e);
+              }
+          }
+
+          public static class BizException extends RuntimeException {
+              public BizException(String msg, Throwable cause) { super(msg, cause); }
+          }
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: false
+      must_reference_standard: true

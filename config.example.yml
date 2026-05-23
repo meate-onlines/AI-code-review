@@ -1,0 +1,93 @@
+# =====================================================================
+# AI Code Review 配置示例（LangChain 重构版）
+# 使用方法：复制本文件为 config.yml 并填入真实参数
+# 所有字段也可通过环境变量覆盖：REVIEW__GITLAB__TOKEN=xxx 等
+# =====================================================================
+
+gitlab:
+  url: "https://gitlab.example.com"
+  token: "glpat-xxxxxxxxxxxxxxxx"
+  user: ""             # 可选
+  timeout: 30
+
+ai:
+  # OpenAI 兼容协议端点：阿里 DashScope / DeepSeek / OpenRouter 等都可直接接
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  api_key: "sk-xxxxxxxxxxxxxxxx"
+  model: "qwen-coder-plus"
+  temperature: 0.2
+  max_tokens: 2048
+  timeout: 60
+  role_desc: "你是一名资深的代码评审专家，熟悉常见安全漏洞、性能陷阱与可维护性问题。"
+
+review:
+  include_patterns:
+    - "**/*.java"
+    - "**/*.kt"
+    - "**/*.py"
+    - "**/*.go"
+    - "**/*.ts"
+    - "**/*.tsx"
+    - "**/*.js"
+    - "**/*.jsx"
+    - "**/*.xml"
+  exclude_patterns:
+    - "**/generated/**"
+    - "**/*.min.js"
+    - "**/node_modules/**"
+    - "**/vendor/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/target/**"
+  max_file_size_kb: 200
+  concurrency: 4
+  # 只发评论的最低严重度：info | warning | critical
+  comment_min_severity: warning
+  standards_token_budget: 4000
+  respect_skip_flag: true
+
+skills:
+  enabled: true
+  standards_dir: "standards"
+  # true 时：未命中任何规范的文件直接跳过审查（适合规范驱动的严格团队）
+  require_match: false
+  max_skills_per_file: 8
+  # 硬匹配命中数 < hard_match_floor 时启用语义兜底
+  hard_match_floor: 2
+  # 语义匹配兜底；不启用时仅做硬匹配，避免引入 embedding 调用
+  semantic:
+    enabled: false
+    base_url: ""              # 留空则复用 ai.base_url
+    api_key: ""               # 留空则复用 ai.api_key
+    model: "text-embedding-v3"
+    cache_path: ".cache/skills_index.json"
+    top_k: 3
+    min_score: 0.55
+
+# Webhook 实时审查（替代 cron）；不启用时本段可全删
+# 启动：python -m app.cli serve  或  uvicorn app.webhook.app:create_app --factory
+# GitLab Project → Settings → Webhooks 添加：
+#   URL:    https://<your-host>/gitlab/webhook
+#   Secret: 与下面 secret 一致
+#   Trigger: Merge request events
+webhook:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8000
+  path: "/gitlab/webhook"
+  secret: "change-me-to-a-long-random-string"
+  max_concurrent_reviews: 2
+  dedupe_ttl_seconds: 1800
+  warmup_on_start: true
+  log_summary_per_mr: true
+
+# LangSmith 追踪与本地 usage 汇总
+# - 不需要上报 LangSmith 时把 enabled 设 false，但 local_summary 仍可用，
+#   终端会打印每次运行的 token 消耗和 skill 命中分布。
+# - 上报后可在 https://smith.langchain.com 按 tag (lang:java / mr:123 / skill:xxx) 过滤查看
+langsmith:
+  enabled: false
+  api_key: "lsv2_pt_xxxxxxxxxxxxxxxx"
+  endpoint: "https://api.smith.langchain.com"
+  project: "ai-code-review"
+  local_summary: true

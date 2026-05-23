@@ -1,0 +1,78 @@
+skill: java-naming-convention
+
+cases:
+  - name: 类名小写下划线必须被检出
+    file_path: src/main/java/com/foo/user_service.java
+    code: |
+      package com.foo;
+
+      public class user_service {
+          public void Get_User_Info() {
+              return;
+          }
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      min_severity: warning
+      issue_keywords: ["命名", "驼峰", "CamelCase", "下划线"]
+
+  - name: 常量未使用 UPPER_SNAKE_CASE 应被检出
+    file_path: src/main/java/com/foo/Config.java
+    code: |
+      package com.foo;
+
+      public class Config {
+          public static final String userName = "alice";
+          public static final int maxRetry = 3;
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["常量", "UPPER_SNAKE_CASE", "大写"]
+
+  - name: 接口加 I 前缀应被检出
+    file_path: src/main/java/com/foo/IOrderService.java
+    code: |
+      package com.foo;
+
+      public interface IOrderService {
+          void createOrder(long userId);
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["接口", "I 前缀", "前缀"]
+
+  - name: 合规命名不应被误报
+    file_path: src/main/java/com/foo/UserService.java
+    code: |
+      package com.foo;
+
+      public class UserService {
+          public static final int MAX_RETRY = 3;
+          private final UserRepository userRepository;
+
+          public UserService(UserRepository userRepository) {
+              this.userRepository = userRepository;
+          }
+
+          public boolean isActive(long userId) {
+              return userRepository.findById(userId).isPresent();
+          }
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: false
+      must_reference_standard: true
+
+  - name: Python 文件不应触发本 Java skill
+    file_path: app/foo.py
+    code: |
+      def hello():
+          return 1
+    expect:
+      skill_should_hit: false

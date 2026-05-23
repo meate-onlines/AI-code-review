@@ -1,5 +1,12 @@
 .idea
+.vscode
 /config.yml
-/repository/*_test.*
-*_test.*
 *.pyc
+__pycache__/
+.env
+.venv/
+venv/
+*.egg-info/
+.langsmith/
+.cache/
+

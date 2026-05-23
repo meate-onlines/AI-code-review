@@ -1,0 +1,52 @@
+skill: python-type-hints
+
+cases:
+  - name: 公开函数缺类型注解应被检出
+    file_path: app/services/user_service.py
+    code: |
+      def fetch_user(uid):
+          return db.query(uid)
+
+      def update(uid, name):
+          db.update(uid, name)
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["类型", "注解", "type hint"]
+
+  - name: 缺返回值注解应被检出
+    file_path: app/services/order_service.py
+    code: |
+      def create_order(user_id: int, amount: int):
+          ...
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["返回值", "->"]
+
+  - name: 完整注解不应误报
+    file_path: app/services/payment_service.py
+    code: |
+      from typing import Final
+
+      MAX_RETRY: Final[int] = 3
+
+      def charge(user_id: int, amount: int) -> bool:
+          return True
+
+      def refund(user_id: int, amount: int) -> bool | None:
+          return None
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: false
+      must_reference_standard: true
+
+  - name: 测试目录的文件不应触发
+    file_path: tests/test_user.py
+    code: |
+      def test_something():
+          assert 1 == 1
+    expect:
+      skill_should_hit: false

@@ -1,0 +1,7 @@
+# Standards 规范库元数据
+version: 0.1.0
+owner: platform-team
+description: |
+  公司开发规范库。每条规范是 standards/ 下一个 Markdown 文件，
+  YAML front-matter 描述触发条件，正文是注入 prompt 的规范内容。
+  新增规范请遵循目录约定：general/、<language>/、domain/<bizline>/

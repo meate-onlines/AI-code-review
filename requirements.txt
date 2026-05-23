@@ -1,3 +1,31 @@
-openai~=1.51.2
+# LangChain 生态（>=0.3 是当前稳定主线，API 变动较小）
+# openai 包由 langchain-openai 间接拉取，无需显式声明
+langchain>=0.3.7,<0.4
+langchain-core>=0.3.15,<0.4
+langchain-openai>=0.2.5,<0.3
+
+# 数据建模 / 配置
+pydantic>=2.7,<3
+pydantic-settings>=2.4,<3
+
+# GitLab / YAML / CLI
 python-gitlab~=4.13.0
 PyYAML~=6.0.2
+typer>=0.15,<0.18         # 0.12 与 click 8.4 不兼容（Secondary flag 校验），需 >=0.15
+
+# 通用工具
+python-frontmatter>=1.1.0   # 解析 standards/*.md 的 YAML front-matter
+tenacity>=8.5               # 重试（langchain with_retry 也内置依赖它）
+
+# 可观测性
+langsmith>=0.1.130          # trace / token / metadata 上报
+rich>=13.7                  # CLI 表格化输出（测试结果、usage summary）
+
+# 语义匹配兜底
+# Python 3.13+ / 3.14 需要 numpy >= 2.1（1.x 没有对应平台 wheel）
+numpy>=2.1
+# 注：embedding 客户端复用 langchain-openai，无需额外依赖
+
+# Webhook 服务（GitLab 实时审查）
+fastapi>=0.115,<0.116
+uvicorn[standard]>=0.30,<0.31

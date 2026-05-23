@@ -1,0 +1,65 @@
+skill: java-mybatis-sql-injection
+
+cases:
+  - name: 使用 ${} 拼接条件应被检出为 critical
+    file_path: src/main/resources/mapper/UserMapper.xml
+    code: |
+      <?xml version="1.0" encoding="UTF-8" ?>
+      <mapper namespace="com.foo.UserMapper">
+        <select id="findUser" resultType="User">
+          SELECT * FROM user WHERE name = '${name}'
+        </select>
+      </mapper>
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      min_severity: critical
+      issue_keywords: ["${", "注入", "SELECT *", "#{}"]
+
+  - name: UPDATE 不带 WHERE 应被检出为 critical
+    file_path: src/main/resources/mapper/OrderMapper.xml
+    code: |
+      <?xml version="1.0" encoding="UTF-8" ?>
+      <mapper namespace="com.foo.OrderMapper">
+        <update id="updateAll">
+          UPDATE `order` SET status = 0
+        </update>
+      </mapper>
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      min_severity: critical
+      issue_keywords: ["WHERE", "全表"]
+
+  - name: 注解中字符串拼接 SQL 应被检出
+    file_path: src/main/java/com/foo/UserMapper.java
+    code: |
+      package com.foo;
+
+      import org.apache.ibatis.annotations.Select;
+
+      public interface UserMapper {
+          @Select("SELECT * FROM user WHERE id = " + "1")
+          User getById(long id);
+      }
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: true
+      must_reference_standard: true
+      issue_keywords: ["注入", "拼接", "#{}"]
+
+  - name: 规范的 #{} 写法不应误报
+    file_path: src/main/resources/mapper/UserMapper.xml
+    code: |
+      <?xml version="1.0" encoding="UTF-8" ?>
+      <mapper namespace="com.foo.UserMapper">
+        <select id="findUser" resultType="UserVO">
+          SELECT id, name, status FROM user WHERE name = #{name}
+        </select>
+      </mapper>
+    expect:
+      skill_should_hit: true
+      ai_should_find_issue: false
+      must_reference_standard: true

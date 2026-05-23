@@ -1,21 +1,34 @@
-from repository import code
-from ai import ali_ai
-import datetime
+"""向后兼容入口。
+
+新版本推荐使用 CLI：
+    python -m app.cli review today
+    python -m app.cli review mr <project_id> <mr_iid>
+    python -m app.cli review file <local_file>
+    python -m app.cli skills list
+
+直接运行 ``python main.py`` 等价于 ``review today``，行为与旧版一致。
+"""
+
+from __future__ import annotations
+
 import asyncio
-mrs_today = code.get_mrs_created_today()
-print(f"开始审核{datetime.datetime.now().date()}合并的代码,总数:{len(mrs_today)}")
-code.parse_diffs(mrs_today, ali_ai.review_code)
-# Wait for any pending async operations to complete
+import logging
 
-try:
-    # Get the current event loop
-    loop = asyncio.get_event_loop()
-    # Run until all tasks are complete
-    pending = asyncio.all_tasks(loop)
-    loop.run_until_complete(asyncio.gather(*pending))
-except RuntimeError:
-    # Handle case where there is no event loop
-    pass
+from app.pipeline import Reviewer
+from app.settings import get_settings
 
-print("今日合并提交的代码审核完毕！")
 
+def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+        datefmt="%H:%M:%S",
+    )
+    settings = get_settings("config.yml")
+    reviewer = Reviewer(settings)
+    asyncio.run(reviewer.run_today())
+    print("今日合并提交的代码审核完毕！")
+
+
+if __name__ == "__main__":
+    main()
